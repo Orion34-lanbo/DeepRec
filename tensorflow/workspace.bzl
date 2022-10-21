@@ -1087,6 +1087,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         strip_prefix = "arrow-apache-arrow-5.0.0",
         urls = [
             "https://github.com/apache/arrow/archive/apache-arrow-5.0.0.tar.gz",
+            "http://pai-blade.oss-accelerate.aliyuncs.com/deeprec_disc/arrow-apache-arrow-5.0.0.tar.gz",
         ],
     )
 
@@ -1141,6 +1142,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/facebook/zstd/archive/v1.4.4.tar.gz",
             "https://github.com/facebook/zstd/archive/v1.4.4.tar.gz",
+            "http://pai-blade.oss-cn-zhangjiakou.aliyuncs.com/deeprec_disc/v1.4.4.tar.gz",
         ],
     )
 
@@ -1152,6 +1154,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/miloyip/rapidjson/archive/418331e99f859f00bdc8306f69eba67e8693c55e.tar.gz",
             "https://github.com/miloyip/rapidjson/archive/418331e99f859f00bdc8306f69eba67e8693c55e.tar.gz",
+            "http://pai-blade.oss-accelerate.aliyuncs.com/deeprec_disc/rapidjson-418331e99f859f00bdc8306f69eba67e8693c55e.tar.gz",
         ],
     )
 
@@ -1173,7 +1176,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         strip_prefix = "aws-c-io-0.11.2",
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/awslabs/aws-c-io/archive/refs/tags/v0.11.2.tar.gz",
-            "https://github.com/awslabs/aws-c-io/archive/refs/tags/v0.11.2.tar.gz",  
+            "https://github.com/awslabs/aws-c-io/archive/refs/tags/v0.11.2.tar.gz",
         ],
     )
 
@@ -1183,8 +1186,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         sha256 = "bae0c762b6a4b779a0db0f4730512da6cb500e76681ffdcb9f7286d8e26e547a",
         strip_prefix = "aws-c-event-stream-0.2.6",
         urls = [
-            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/awslabs/aws-c-event-stream/archive/refs/tags/v0.2.6.tar.gz",
-            "https://github.com/awslabs/aws-c-event-stream/archive/refs/tags/v0.2.6.tar.gz",  
+            "http://pai-blade.oss-accelerate.aliyuncs.com/deeprec_disc/aws-c-event-stream-0.2.6.tar.gz",
         ],
     )
 
@@ -1195,7 +1197,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         strip_prefix = "aws-checksums-0.1.12",
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/awslabs/aws-checksums/archive/refs/tags/v0.1.12.tar.gz",
-            "https://github.com/awslabs/aws-checksums/archive/refs/tags/v0.1.12.tar.gz",  
+            "https://github.com/awslabs/aws-checksums/archive/refs/tags/v0.1.12.tar.gz",
         ],
     )
 
@@ -1206,7 +1208,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         strip_prefix = "aws-c-cal-0.5.17",
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/awslabs/aws-c-cal/archive/refs/tags/v0.5.17.tar.gz",
-            "https://github.com/awslabs/aws-c-cal/archive/refs/tags/v0.5.17.tar.gz",  
+            "https://github.com/awslabs/aws-c-cal/archive/refs/tags/v0.5.17.tar.gz",
         ],
     )
 
