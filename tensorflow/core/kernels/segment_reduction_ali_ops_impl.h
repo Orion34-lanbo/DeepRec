@@ -87,9 +87,9 @@ Status ValidateSparseSegmentReduction(OpKernelContext* context,
 // * Index: The element type of the indices tensor (int32 or int64).
 // * SegmentId: The element type of the segment_ids tensor (int32 or int64).
 template <typename Device, class T, typename Index, typename SegmentId>
-class SparseSegmentReductionOpBase : public OpKernel {
+class SparseSegmentReductionAliOpBase : public OpKernel {
  public:
-  explicit SparseSegmentReductionOpBase(OpKernelConstruction* context,
+  explicit SparseSegmentReductionAliOpBase(OpKernelConstruction* context,
                                         bool is_mean, bool is_sqrtn,
                                         bool has_num_segments, T default_value)
       : OpKernel(context),
@@ -531,9 +531,9 @@ struct SparseSegmentGradFunctor<CPUDevice, T, Index, SegmentId> {
 // * Index: The element type of the indices tensor (int32 or int64).
 // * SegmentId: The element type of the segment_ids tensor (int32 or int64).
 template <typename Device, class T, typename Index, typename SegmentId>
-class SparseSegmentGradOpBase : public OpKernel {
+class SparseSegmentGradAliOpBase : public OpKernel {
  public:
-  explicit SparseSegmentGradOpBase(OpKernelConstruction* context,
+  explicit SparseSegmentGradAliOpBase(OpKernelConstruction* context,
                                    SparseSegmentReductionOperation operation)
       : OpKernel(context), operation_(operation) {}
 
@@ -574,7 +574,6 @@ class SparseSegmentGradOpBase : public OpKernel {
   const SparseSegmentReductionOperation operation_;
 };
 
-} // namespace tensorflow
+}  // namespace tensorflow
 
 #endif // TENSORFLOW_CORE_KERNELS_SEGMENT_REDUCTION_ALI_OPS_UTIL_H_
-
