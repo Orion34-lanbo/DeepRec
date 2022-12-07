@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_types.h"
 #include "tensorflow/core/framework/types.h"
-#include "tensorflow/core/kernels/segment_reduction_ali_ops_util.h"
+#include "tensorflow/core/kernels/segment_reduction_ali_ops_impl.h"
 #include "tensorflow/core/lib/core/status.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/util/util.h"
@@ -43,7 +43,7 @@ typedef Eigen::ThreadPoolDevice CPUDevice;
 // Same as SegmentReductionOp but takes as input a "sparse" tensor, represented
 // by two dense tensors, one containing the data, and the other containing
 // indices into the data.
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionAliOpBase : public OpKernel {
  public:
   explicit SparseSegmentReductionAliOpBase(OpKernelConstruction* context,
@@ -72,124 +72,131 @@ class SparseSegmentReductionAliOpBase : public OpKernel {
 
  private:
   const bool has_num_segments_;
-  SparseSegmentReduction<Device, T, Tindex> reducer_;
+  SparseSegmentReduction<Device, T, Tindex, Tsegment> reducer_;
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionMeanAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionMeanAliOp(OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, true /*is_mean*/, false /*is_sqrtn*/,
             false /* has_num_segments */, T(0) /* default_value */) {}
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionMeanWithNumSegmentsAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionMeanWithNumSegmentsAliOp(
       OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, true /*is_mean*/, false /*is_sqrtn*/,
             true /* has_num_segments */, T(0) /* default_value */) {}
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionSqrtNAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionSqrtNAliOp(OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, false /*is_mean*/, true /*is_sqrtn*/,
             false /* has_num_segments */, T(0) /* default_value */) {}
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionSqrtNWithNumSegmentsAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionSqrtNWithNumSegmentsAliOp(
       OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, false /*is_mean*/, true /*is_sqrtn*/,
             true /* has_num_segments */, T(0) /* default_value */) {}
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionSumAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionSumAliOp(OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, false /*is_mean*/, false /*is_sqrtn*/,
             false /* has_num_segments */, T(0) /* default_value */) {}
 };
 
-template <typename Device, class T, typename Tindex>
+template <typename Device, class T, typename Tindex, typename Tsegment>
 class SparseSegmentReductionSumWithNumSegmentsAliOp
-    : public SparseSegmentReductionAliOpBase<Device, T, Tindex> {
+    : public SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentReductionSumWithNumSegmentsAliOp(
       OpKernelConstruction* context)
-      : SparseSegmentReductionAliOpBase<Device, T, Tindex>(
+      : SparseSegmentReductionAliOpBase<Device, T, Tindex, Tsegment>(
             context, false /*is_mean*/, false /*is_sqrtn*/,
             true /* has_num_segments */, T(0) /* default_value */) {}
 };
 
+#define REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_SEGMENT_ID_TYPE(type, index_type) \
+  REGISTER_CPU_SPARSE_KERNELS(type, index_type, int32)                         \
+  REGISTER_CPU_SPARSE_KERNELS(type, index_type, int64)
 #define REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(type)       \
-  REGISTER_CPU_SPARSE_KERNELS(type, int32) \
-  REGISTER_CPU_SPARSE_KERNELS(type, int64)
+  REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_SEGMENT_ID_TYPE(type, int32) \
+  REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_SEGMENT_ID_TYPE(type, int64)
 
-#define REGISTER_CPU_SPARSE_KERNELS(type)                                   \
+#define REGISTER_CPU_SPARSE_KERNELS(type, index_type, segment_ids_type)                                   \
   REGISTER_KERNEL_BUILDER(Name("SparseSegmentSum")                          \
                               .Device(DEVICE_CPU)                           \
                               .TypeConstraint<type>("T")                    \
                               .TypeConstraint<index_type>("Tidx"),               \
-                          SparseSegmentReductionSumAliOp<CPUDevice, type, index_type>); \
+                              .TypeConstraint<segment_ids_type>("Tsegmentids"),         \
+                          SparseSegmentReductionSumAliOp<CPUDevice, type, index_type, segment_ids_type>); \
   REGISTER_KERNEL_BUILDER(                                                  \
       Name("SparseSegmentSumWithNumSegments")                               \
           .Device(DEVICE_CPU)                                               \
           .TypeConstraint<type>("T")                                        \
           .TypeConstraint<index_type>("Tidx"),                                   \
-      SparseSegmentReductionSumWithNumSegmentsAliOp<CPUDevice, type, index_type>);
-TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS);
+          .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+      SparseSegmentReductionSumWithNumSegmentsAliOp<CPUDevice, type, index_type, segment_ids_type>);
+TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE);
 #undef REGISTER_CPU_SPARSE_KERNELS
 
-#define REGISTER_CPU_SPARSE_KERNELS(type)                                    \
+#define REGISTER_CPU_SPARSE_KERNELS(type, index_type, segment_ids_type)                                    \
   REGISTER_KERNEL_BUILDER(Name("SparseSegmentMean")                          \
                               .Device(DEVICE_CPU)                            \
                               .TypeConstraint<type>("T")                     \
                               .TypeConstraint<index_type>("Tidx"),                \
-                          SparseSegmentReductionMeanAliOp<CPUDevice, type, index_type>); \
+                              .TypeConstraint<segment_ids_type>("Tsegmentids"),   \
+                          SparseSegmentReductionMeanAliOp<CPUDevice, type, index_type, segment_ids_type>); \
   REGISTER_KERNEL_BUILDER(                                                   \
       Name("SparseSegmentMeanWithNumSegments")                               \
           .Device(DEVICE_CPU)                                                \
           .TypeConstraint<type>("T")                                         \
           .TypeConstraint<index_type>("Tidx"),                                    \
-      SparseSegmentReductionMeanWithNumSegmentsAliOp<CPUDevice, type, index_type>);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(float);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(double);
+          .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+      SparseSegmentReductionMeanWithNumSegmentsAliOp<CPUDevice, type, index_type, segment_ids_type>);
+TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE);
 #undef REGISTER_CPU_SPARSE_KERNELS
 
-#define REGISTER_CPU_SPARSE_KERNELS(type)                                     \
+#define REGISTER_CPU_SPARSE_KERNELS(type, index_type, segment_ids_type)                                     \
   REGISTER_KERNEL_BUILDER(Name("SparseSegmentSqrtN")                          \
                               .Device(DEVICE_CPU)                             \
                               .TypeConstraint<type>("T")                      \
                               .TypeConstraint<index_type>("Tidx"),                 \
-                          SparseSegmentReductionSqrtNAliOp<CPUDevice, type, index_type>); \
+                              .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+                          SparseSegmentReductionSqrtNAliOp<CPUDevice, type, index_type, segment_ids_type>); \
   REGISTER_KERNEL_BUILDER(                                                    \
       Name("SparseSegmentSqrtNWithNumSegments")                               \
           .Device(DEVICE_CPU)                                                 \
           .TypeConstraint<type>("T")                                          \
           .TypeConstraint<index_type>("Tidx"),                                     \
-      SparseSegmentReductionSqrtNWithNumSegmentsAliOp<CPUDevice, type, index_type>);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(float);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(double);
+          .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+      SparseSegmentReductionSqrtNWithNumSegmentsAliOp<CPUDevice, type, index_type, segment_ids_type>);
+TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE);
 #undef REGISTER_CPU_SPARSE_KERNELS
 
-template <class T>
+template <class T, typename Tindex, typename Tsegment>
 class SparseSegmentGradAliOpBase : public OpKernel {
  public:
   explicit SparseSegmentGradAliOpBase(OpKernelConstruction* context,
@@ -210,7 +217,7 @@ class SparseSegmentGradAliOpBase : public OpKernel {
                 errors::InvalidArgument("output_dim0 should be a scalar."));
 
     Tensor output;
-    reducer_.ReduceGrad<T>(context, input, indices, segment_ids,
+    reducer_.ReduceGrad<T, Tindex, Tsegment>(context, input, indices, segment_ids,
         output_dim0, output);
     context->set_output(0, output);
   }
@@ -219,39 +226,40 @@ class SparseSegmentGradAliOpBase : public OpKernel {
   SparseSegmentReductionGrad reducer_;
 };
 
-template <class T, typename Tindex>
-class SparseSegmentMeanGradAliOp : public SparseSegmentGradAliOpBase<T, Tindex> {
+template <class T, typename Tindex, typename Tsegment>
+class SparseSegmentMeanGradAliOp : public SparseSegmentGradAliOpBase<T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentMeanGradAliOp(OpKernelConstruction* context)
-      : SparseSegmentGradAliOpBase<T, Tindex>(context, false /*is_sqrtn*/) {}
+      : SparseSegmentGradAliOpBase<T, Tindex, Tsegment>(context, false /*is_sqrtn*/) {}
 };
 
-template <class T, typename Tindex>
-class SparseSegmentSqrtNGradAliOp : public SparseSegmentGradAliOpBase<T, Tindex> {
+template <class T, typename Tindex, typename Tsegment>
+class SparseSegmentSqrtNGradAliOp : public SparseSegmentGradAliOpBase<T, Tindex, Tsegment> {
  public:
   explicit SparseSegmentSqrtNGradAliOp(OpKernelConstruction* context)
-      : SparseSegmentGradAliOpBase<T, Tindex>(context, true /*is_sqrtn*/) {}
+      : SparseSegmentGradAliOpBase<T, Tindex, Tsegment>(context, true /*is_sqrtn*/) {}
 };
 
-#define REGISTER_CPU_SPARSE_KERNELS(type)                     \
+#define REGISTER_CPU_SPARSE_KERNELS(type, index_type, segment_ids_type)                     \
   REGISTER_KERNEL_BUILDER(Name("SparseSegmentMeanGrad")       \
                               .Device(DEVICE_CPU)             \
                               .TypeConstraint<type>("T")      \
                               .TypeConstraint<index_type>("Tidx"), \
-                          SparseSegmentMeanGradAliOp<type, index_type>);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(float);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(double);
+                              .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+                          SparseSegmentMeanGradAliOp<type, index_type, segment_ids_type>);
+TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE);
 #undef REGISTER_CPU_SPARSE_KERNELS
 
-#define REGISTER_CPU_SPARSE_KERNELS(type)                     \
+#define REGISTER_CPU_SPARSE_KERNELS(type, index_type, segment_ids_type)                     \
   REGISTER_KERNEL_BUILDER(Name("SparseSegmentSqrtNGrad")      \
                               .Device(DEVICE_CPU)             \
                               .TypeConstraint<type>("T")      \
                               .TypeConstraint<index_type>("Tidx"), \
-                          SparseSegmentSqrtNGradAliOp<type, index_type>);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(float);
-REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE(double);
+                              .TypeConstraint<segment_ids_type>("Tsegmentids"),             \
+                          SparseSegmentSqrtNGradAliOp<type, index_type, segment_ids_type>);
+TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE);
 #undef REGISTER_CPU_SPARSE_KERNELS
 
 #undef REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_INDEX_TYPE
+#undef REGISTER_CPU_SPARSE_KERNELS_FOR_EACH_SEGMENT_ID_TYPE
 }  // namespace tensorflow

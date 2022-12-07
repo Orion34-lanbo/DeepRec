@@ -17,7 +17,7 @@
 #include "tensorflow/core/util/work_sharder.h"
 
 namespace tensorflow {
-template<typename Device, typename T, Typename Tindex>
+template<typename Device, typename T, typename Tindex, typename Tsegment>
 class SparseSegmentReduction {
  public:
   explicit SparseSegmentReduction(bool is_mean, bool is_sqrtn,
@@ -53,11 +53,11 @@ class SparseSegmentReduction {
 
     auto input_flat = input.flat_outer_dims<T>();
     const int64 num_col = input_flat.dimension(1);
-    const auto segment_vec = segment_ids.vec<OutputRow>();
+    const auto segment_vec = segment_ids.vec<Tsegment>();
 
     // Note that the current implementation assumes that segment_vec values are
     // sorted.
-    const OutputRow last_segment_id_plus_one =
+    const Tsegment last_segment_id_plus_one =
         num_indices > 0
             ? internal::SubtleMustCopy(segment_vec(num_indices - 1)) + 1
             : 0;
@@ -92,19 +92,19 @@ class SparseSegmentReduction {
     auto work = [this, &context,
                  &output_flat, &input_flat, &indices_vec, &segment_vec,
                  num_col, num_indices, output_rows](int64 start, int64 end) {
-      OutputRow uninitialized_index = start;
+      Tsegment uninitialized_index = start;
       // We mannually set start_pos of first thread and end_pos of last thread,
       // which could make sure that unsorted ids would be checked out.
       int64 start_pos =
-          start == 0 ? 0 : FirstGreatEqual(segment_vec, start, 0, num_indices);
+          start == 0 ? 0 : FirstGreatEqual<Tsegment>(segment_vec, start, 0, num_indices);
       const int64 end_pos =
           end == output_rows
               ? num_indices
-              : FirstGreatEqual(segment_vec, end, 0, num_indices);
+              : FirstGreatEqual<Tsegment>(segment_vec, end, 0, num_indices);
       OP_REQUIRES(context, start_pos <= end_pos,
                   errors::InvalidArgument("segment ids are not increasing"));
 
-      OutputRow out_index; 
+      Tsegment out_index; 
       bool do_work;
       if (start_pos == num_indices) {
         do_work = false;
@@ -117,7 +117,7 @@ class SparseSegmentReduction {
         // We initialize next_index to 0 to avoid "warning: 'next_index' may be
         // used uninitialized in this function" in the Mac build (since the
         // compiler isn't smart enough to realize the code is safe).
-        OutputRow next_index = 0;
+        Tsegment next_index = 0;
         if (cur_pos < end_pos) {
           next_index = internal::SubtleMustCopy(segment_vec(cur_pos));
           if (out_index == next_index) {
@@ -177,10 +177,10 @@ class SparseSegmentReduction {
   }
 
  private:
-  typedef int32 OutputRow;
 
-  int64 FirstGreatEqual(const typename TTypes<OutputRow>::ConstVec& segment_vec,
-                        OutputRow idx, int64 lb, int64 rb) {
+  template<typename Segment>
+  int64 FirstGreatEqual(const typename TTypes<Segment>::ConstVec& segment_vec,
+                        Segment idx, int64 lb, int64 rb) {
     if (lb == rb) return lb;
     int64 mid = (lb + rb) / 2;
     if (segment_vec(mid) < idx) {
@@ -328,7 +328,7 @@ class SparseSegmentReductionGrad {
   explicit SparseSegmentReductionGrad(bool is_sqrtn)
     : is_sqrtn_(is_sqrtn) {}
 
-  template<typename T, typename Tindex>
+  template<typename T, typename Tindex, typename SegmentId>
   void ReduceGrad(OpKernelContext* context, const Tensor& input,
       const Tensor& indices, const Tensor& segment_ids,
       const Tensor& output_dim0, Tensor& output) {
@@ -336,7 +336,6 @@ class SparseSegmentReductionGrad {
     OP_REQUIRES(context, N == segment_ids.NumElements(),
                 errors::InvalidArgument(
                     "segment_ids and indices should have same size."));
-    typedef int32 SegmentId;
     const SegmentId M =
         internal::SubtleMustCopy(output_dim0.scalar<SegmentId>()());
 
@@ -464,4 +463,3 @@ class SparseSegmentReductionGrad {
 } // namespace tensorflow
 
 #endif // TENSORFLOW_CORE_KERNELS_SEGMENT_REDUCTION_ALI_OPS_UTIL_H_
-
